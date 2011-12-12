@@ -1,0 +1,25 @@
+<?php
+ include_once('inc.php');
+ header('Content-type: text/cache-manifest');
+?>CACHE MANIFEST
+# Version: <?php echo VERSION ?>
+
+CACHE:
+<?php echo SDK_HOST; ?>
+
+<?php echo SDK_BUTTON; ?>
+
+lib/iscroll.js
+lib/q.js
+ui/bg.gif
+ui/ui.css
+ui/ui.js
+ui/ui-arrow-right-gray.png
+ui/ui-arrow-right-white.png
+ui/ui-button-back-blue.png
+ui/ui-image-empty.jpg
+ui/apple-touch-icon-56x56.png
+ui/apple-touch-startup-image-<?php echo getAppleTouchStartupImageSize() ?>.png
+
+NETWORK:
+*
