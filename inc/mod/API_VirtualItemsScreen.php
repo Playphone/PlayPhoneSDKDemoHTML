@@ -217,6 +217,8 @@ class API_VirtualItemsScreenModule extends Module
 
    __construct();
 
+   that.refresh = doVirtualItemsList;
+
    <?if(false){?></script><?}?>
    <?
   }

@@ -124,6 +124,7 @@ class API_ShopPacksModule extends Module
        else
         {
          msg = 'Done.';
+         Modules.API_VirtualItemsScreenModule.refresh();
         }
        alert(msg);
       };
@@ -150,6 +151,7 @@ class API_ShopPacksModule extends Module
        else
         {
          msg = 'Done.';
+         Modules.API_VirtualItemsScreenModule.refresh();
         }
        alert(msg);
       };
@@ -234,11 +236,11 @@ class API_ShopPacksModule extends Module
 
       Q('.buy', n)
       .attr('item-id', item.id)
-      // FIXME: check by "priceItemId" property.
-      //        Use showDashboardDialogCheckoutShopPackList if priceItemId = null
-      //
-      // .attr('item-sign', (!item.priceItemId) ? 1 : 0);
-      .attr('item-sign', (item.price) ? 1 : 0);
+      // item-sign = 1 => Buy shop pack via real currency using
+      // item-sign = 0 => Buy shop pack via virtual currency using (if "priceItemId" aka "vCurrencyID" defined)
+      // item-sign = 0 => Get FREE shop pack (if item.price = null and item.priceItemId == null)
+      .text((!item.price && !item.priceItemId) ? "Get Now!" : "Buy Now!")
+      .attr('item-sign', (item.price && !item.priceItemId) ? 1 : 0);
 
       holder.append(n);
      });
