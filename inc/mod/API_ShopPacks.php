@@ -39,6 +39,10 @@ class API_ShopPacksModule extends Module
           <span class="ui-value category"></span>
          </div>
          <div class="ui-row">
+          <span class="ui-label">Item:</span>
+          <span class="ui-value itemName"></span>
+         </div>
+         <div class="ui-row">
           <span class="ui-label">Amount:</span>
           <span class="ui-value amount"></span>
          </div>
@@ -225,12 +229,14 @@ class API_ShopPacksModule extends Module
       Q('.name', n).text(item.packName);
       Q('.category', n).text(itemRaw.category_name);
       Q('.description', n).text(item.packDesc);
+      Q('.itemName', n).text(itemRaw.gameitem_name);
       Q('.amount', n).text(itemRaw.commodity_amount);
       var priceText = 'FREE';
       if(item.price)
        {
         priceText = item.price;
         if(item.priceCurrSign) priceText += ' ' + item.priceCurrSign;
+        else if(itemRaw.currency_name) priceText += ' ' + itemRaw.currency_name;
        }
       Q('.price', n).text(priceText);
 
