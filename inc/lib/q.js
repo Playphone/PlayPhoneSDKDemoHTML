@@ -54,8 +54,8 @@
  * Q(selector).attr( { name1:value1 , name2:fn2, ... } )
  * Q(selector).is(selector)
  * Q(selector).not(selector)
- * Q(selector).first()
- * Q(selector).last()
+ * Q(selector).first(nodeOnly)
+ * Q(selector).last(nodeOnly)
  *
  * Q extending construction:
  * this - current collection of Q
@@ -141,6 +141,12 @@
       return o.childNodes;
     };
 
+    var _isNode = function(o) {
+      return (
+        typeof Node === 'object' ? o instanceof Node :
+        typeof o === 'object' && typeof o.nodeType === 'number' && typeof o.nodeName === 'string'
+      );
+    };
 
     Q.fn = Q.prototype = {
       constructor: Q,
@@ -151,7 +157,7 @@
         var selector = selector || '';
         var context = context || document;
         if( context.constructor == String ) context = Q(context);
-        if( context.constructor == Node ) context = [ context ];
+        if( _isNode(context) ) context = [ context ];
         if ( !selector ) return this;
 
         if( typeof selector == 'number' || typeof selector == 'boolean' ) selector = String(selector);
@@ -171,7 +177,7 @@
           var o = document.getElementById(selector.replace('#',''));
           if(o) result.push(o);
         }
-        else if(selector instanceof Node){
+        else if(_isNode(selector)){
           result.push(selector);
         }
         else if(selector instanceof Q){
@@ -207,6 +213,14 @@
 
   window.Q = Q;
 })(window);
+
+// Q.isNode(o)
+Q.isNode = Q.fn.isNode = function(o) {
+  return (
+    typeof Node === 'object' ? o instanceof Node :
+    typeof o === 'object' && typeof o.nodeType === 'number' && typeof o.nodeName === 'string'
+  );
+};
 
 // Q.unique()
 Q.unique = Q.fn.unique = function() {
@@ -257,13 +271,15 @@ Q.each = Q.fn.each = function() {
 };
 
 // Q(selector).first()
-Q.first = Q.fn.first = function() {
-  return (this.length && typeof this[0] != 'undefined') ? Q(this[0]) : Q();
+Q.first = Q.fn.first = function(nodeOnly) {
+  var node = (this.length && typeof this[0] != 'undefined') ? this[0] : null;
+  return (nodeOnly) ? node : Q(node);
 };
 
 // Q(selector).last()
-Q.last = Q.fn.last = function() {
-  return (this.length && typeof this[this.length-1] != 'undefined') ? Q(this[this.length-1]) : Q();
+Q.last = Q.fn.last = function(nodeOnly) {
+  var node = (this.length && typeof this[this.length-1] != 'undefined') ? this[this.length-1] : null;
+  return (nodeOnly) ? node : Q(node);
 };
 
 // Q(selector).clone()
@@ -400,258 +416,6 @@ Q.empty = Q.fn.empty = function(){
   return this;
 };
 
-// Q(selector).html(string)
-// Q(selector).html()
-(new function(){
-
-  var _evalScriptTags = function(string) {
-    if(typeof string != 'string') return;
-    var head = (document.head) ? document.head : document.getElementsByTagName('head')[0];
-    Q('script', string).each(function(node){
-      if(node.src){
-        var s = document.createElement('SCRIPT');
-        s.async = node.async;
-        s.src = node.src;
-        Q(s).bind('load', function(e){
-          var el = this;
-          setTimeout(function(){
-            head.removeChild(el);
-          },100);
-        });
-        head.appendChild(s);
-      }
-      else{
-        var source = node.innerHTML || node.textContent || node.innerText || node.nodeValue;
-        (new Function( source ))();
-      }
-    });
-  };
-
-  var _get = function(node) {
-    if(node instanceof Node){
-      return node.innerHTML;
-    }
-    return null;
-  };
-
-  var _set = function(node, string) {
-    if(node instanceof Node){
-      Q(node).empty();
-      if(typeof string == 'number' || typeof string == 'boolean') var string = String(string);
-      var a = Q(string);
-      if(!a.length && typeof string == 'string'){
-        a = Q(document.createTextNode(string));
-      }
-      Q.each(a, function(child){
-        node.appendChild(child.cloneNode(true));
-      });
-    }
-    return this;
-  };
-
-  var html = function() {
-    var a = arguments;
-    if (a.length == 1) {
-      this.each(function(node){
-        _set(node, a[0]);
-      });
-      _evalScriptTags(a[0]);
-      return this;
-    }
-    else {
-      var r = [];
-      this.each(function(node){
-        r.push(_get(node));
-      });
-      return r.join(' ');
-    }
-  };
-
-  Q.html = Q.fn.html = html;
-
-}());
-
-
-// Q(selector).text(string)
-// Q(selector).text()
-(new function(){
-
-  var _text = function(html) {
-    return (typeof html != 'undefined') ? Q.trim(String(html).replace(/<[\/\!]*?[^<>]*?>/img, '')) : '';
-  };
-
-  var _get = function(node) {
-    if(node instanceof Node){
-      return _text(node.innerHTML || node.textContent || node.innerText || node.nodeValue || '');
-    }
-    return null;
-  };
-
-  var _set = function(node, string) {
-    if(node instanceof Node){
-      Q(node).empty();
-      if(typeof string == 'number' || typeof string == 'boolean') var string = String(string);
-      var a = Q(string);
-      if(!a.length && typeof string == 'string'){
-        a = Q(document.createTextNode(string));
-      }
-      Q.each(a, function(child){
-        node.appendChild(document.createTextNode(_text(_get(child))));
-      });
-    }
-    return this;
-  };
-
-  var text = function() {
-    var a = arguments;
-    if (a.length == 1) {
-      this.each(function(node){
-        _set(node, a[0]);
-      });
-      return this;
-    }
-    else {
-      var r = [];
-      this.each(function(node){
-        r.push(_get(node));
-      });
-      return r.join(' ');
-    }
-  };
-
-  Q.text = Q.fn.text = text;
-
-}());
-
-
-// Q.jsonEncode(object)
-// Q.jsonDecode(string)
-// Q.jsonValidate(string)
-(new function(){
-
-  var _jsonEncode = function(object) {
-    if ( window.JSON && window.JSON.stringify ) {
-      return window.JSON.stringify( object );
-    }
-    if(typeof object != 'object' || object === null) {
-      if(typeof object == 'string') object = '"'+object+'"';
-      return String(object);
-    }
-    else {
-      var n, v, t, json = [], arr = (object && object.constructor == Array);
-      for(n in object) {
-        v = object[n]; t = typeof(v);
-        if (t == 'string') v = '"'+v+'"';
-        else if (t == 'object' && v !== null) v = _jsonEncode(v);
-          json.push((arr ? "" : '"' + n + '":') + String(v));
-        }
-        return (arr ? '[' : '{') + String(json) + (arr ? ']' : '}');
-    }
-  };
-
-  var _jsonValidate = function(s) {
-    var chars  = /^[\],:{}\s]*$/,
-        escape = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,
-        tokens = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
-        braces = /(?:^|:|,)(?:\s*\[)+/g;
-    return ( chars.test(s.replace(escape, '@').replace(tokens, ']').replace(braces, '') )) ? true : false;
-  };
-
-  var _jsonDecode = function(string) {
-    if(typeof string != 'string') return null;
-    string = Q.trim(string);
-    if ( window.JSON && window.JSON.parse ) {
-      return window.JSON.parse( string );
-    }
-    if(_jsonValidate(string)){
-     return (new Function( 'return ' + string ))();
-    }
-  };
-
-  Q.jsonValidate = Q.fn.jsonValidate = _jsonValidate;
-  Q.jsonEncode = Q.fn.jsonEncode = _jsonEncode;
-  Q.jsonDecode = Q.fn.jsonDecode = _jsonDecode;
-
-}());
-
-// Q.(object) => url param string
-Q.param = Q.fn.param = function(o){
-  var a = arguments, r = [];
-  var n = (typeof a[1] == 'string') ? (a[1] + '[%s]') : '%s';
-  for(var i in o){
-    if(typeof o[i] == 'object' && o[i] != null) r.push(Q.param(o[i], n.replace('%s', i)));
-    else r.push(n.replace('%s', i) + '=' + encodeURIComponent(o[i]));
-  }
-  return r.join('&');
-};
-
-// Q.ajax({  })
-(new function(){
-
-  var makeXHR = function(){
-    var xhr = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-
-    xhr.getResponse = function(){
-      var r = null;
-      if(typeof this.responseText == 'string'){
-        r = (Q.jsonValidate(this.responseText)) ? Q.jsonDecode(this.responseText) : this.responseText;
-      }
-      return r;
-    };
-
-    return xhr;
-  };
-
-  Q.ajax = Q.fn.ajax = function(o){
-    if(typeof o != 'object' || o == null) return this;
-    var q = {};
-    q.url = (typeof o.url == 'string') ? Q.trim(o.url) : '';
-    q.type = (typeof o.type == 'string' && Q.trim(o.type).length > 0) ? Q.trim(o.type) : 'POST';
-    q.async = (typeof o.async == 'boolean') ? o.async : true;
-    q.contentType = (typeof o.contentType == 'string' && Q.trim(o.contentType).length > 0) ? Q.trim(o.contentType) : 'application/x-www-form-urlencoded';
-    q.xRequestedWith = (typeof o.xRequestedWith == 'string') ? o.xRequestedWith : 'XMLHttpRequest';
-    q.data = (typeof o.data == 'object' && o.data != null) ? Q.param(o.data) : (typeof o.data == 'string' ? o.data : '');
-    q.headers = (typeof o.headers == 'object' && o.headers != null) ? o.headers : {};
-    q.timeout = (typeof o.timeout == 'number') ? o.timeout : 30;
-    q.error = (typeof o.error == 'function') ? o.error : function(){};
-    q.success = (typeof o.success == 'function') ? o.success : function(){};
-    q.complete = (typeof o.complete == 'function') ? o.complete : function(){};
-
-    if(q.type == 'GET' && Q.trim(q.data).length > 0){
-      q.url += (q.url.indexOf('?') >= 0) ? '&' : '?';
-      q.url += q.data;
-      q.data = null;
-    }
-
-    var xhr = makeXHR();
-    xhr.open(q.type, q.url, q.async);
-    xhr.setRequestHeader('Content-type', q.contentType);
-    xhr.setRequestHeader('X-Requested-With', q.xRequestedWith);
-    for(var i in q.headers){
-      xhr.setRequestHeader(String(i), String(q.headers[i]));
-    }
-    var done = false;
-    xhr.onreadystatechange = function(e){
-      if(xhr.readyState==4){
-        done = true;
-        if(xhr.status>=200 && xhr.status<=399){
-          q.success(xhr.getResponse(), xhr);
-        }
-        else q.error(xhr);
-        q.complete(xhr);
-      }
-    };
-    xhr.send(q.data);
-    setTimeout(function(){
-      if(!done){
-        q.error(xhr);
-        q.complete(xhr);
-      }
-    },q.timeout);
-    return this;
-  };
-}());
-
 (new function(){
 
   var _clone = function(data) {
@@ -781,6 +545,256 @@ Q.attr = Q.fn.attr = function(name, value) {
 
 }());
 
+// Q(selector).html(string)
+// Q(selector).html()
+(new function(){
+
+  var _parseHTML = function(string) {
+   var result = { 'html':string, 'call':function(){} };
+   if(typeof string != 'string') return result;
+   // FIXME: Remove HTML comments (<!--...-->) but not in script tags.
+   //var string = string.replace(/<!--([\s\S]*?)-->/g, '');
+   var re = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
+   var tags = string.match(re);
+   if(!tags) return result;
+   result.html = string.replace(re,'');
+   result.call = function() {
+     var head = document.head || document.getElementsByTagName( 'head' )[0] || document.documentElement;
+     Q.each(tags, function(script){
+       // MSIE does not select script tags by querySelectorAll. So, we need to parse response by REGEXP
+       var content = script.replace(/^<script[^<>]*?>|<[\/\!]*?script>$/ig,'');
+       var src = /^<script[^<>]*src[\s]*=["'\s]*([^"'\s]+)[^<>]*>/img.exec(script);
+       src = (src && typeof src[1] != 'undefined') ? src[1] : null;
+       if(src){
+         var s = document.createElement('SCRIPT');
+         s.type = 'text/javascript';
+         s.src = src;
+         Q(s).bind('load', function(e){
+           var el = this;
+           setTimeout(function(){
+             head.removeChild(el);
+           }, 100);
+         });
+         head.appendChild(s);
+       }
+       if(content){
+         (new Function( content ))();
+       }
+     });
+   };
+   return result;
+  };
+
+  var _get = function(node) {
+    return (Q.isNode(node)) ? node.innerHTML : null;
+  };
+
+  var _set = function(node, string) {
+    if(!Q.isNode(node)) return this;
+    Q(node).empty();
+    if(typeof string == 'number' || typeof string == 'boolean') var string = String(string);
+    var a = Q(string);
+    if(!a.length && typeof string == 'string'){
+      a = Q(document.createTextNode(string));
+    }
+    Q.each(a, function(child){
+      node.appendChild(child.cloneNode(true));
+    });
+  };
+
+  var html = function() {
+    var a = arguments;
+    if (a.length == 1) {
+      var r = _parseHTML(a[0]);
+      this.each(function(node){
+        _set(node, r.html);
+      });
+      r.call();
+      return this;
+    }
+    else {
+      var r = [];
+      this.each(function(node){
+        r.push(_get(node));
+      });
+      return r.join('');
+    }
+  };
+
+  Q.html = Q.fn.html = html;
+
+}());
+
+
+// Q(selector).text(string)
+// Q(selector).text()
+(new function(){
+
+  var _text = function(html) {
+    return (typeof html != 'undefined') ? Q.trim(String(html).replace(/<[\/\!]*?[^<>]*?>/img, '')) : '';
+  };
+
+  var _get = function(node) {
+    if(!Q.isNode(node)) return null;
+    return node.textContent || node.innerText || _text(node.innerHTML) || '';
+  };
+
+  var _set = function(node, string) {
+    if(!Q.isNode(node)) return this;
+    Q(node).empty();
+    node.appendChild(document.createTextNode(string));
+  };
+
+  var text = function() {
+    var a = arguments;
+    if (a.length == 1) {
+      this.each(function(node){
+        _set(node, a[0]);
+      });
+      return this;
+    }
+    else {
+      var r = [];
+      this.each(function(node){
+        r.push(_get(node));
+      });
+      return r.join('');
+    }
+  };
+
+  Q.text = Q.fn.text = text;
+
+}());
+
+
+// Q.jsonEncode(object)
+// Q.jsonDecode(string)
+// Q.jsonValidate(string)
+(new function(){
+
+  var _jsonEncode = function(object) {
+    if ( window.JSON && window.JSON.stringify ) {
+      return window.JSON.stringify( object );
+    }
+    if(typeof object != 'object' || object === null) {
+      if(typeof object == 'string') object = '"'+object+'"';
+      return String(object);
+    }
+    else {
+      var n, v, t, json = [], arr = (object && object.constructor == Array);
+      for(n in object) {
+        v = object[n]; t = typeof(v);
+        if (t == 'string') v = '"'+v+'"';
+        else if (t == 'object' && v !== null) v = _jsonEncode(v);
+          json.push((arr ? "" : '"' + n + '":') + String(v));
+        }
+        return (arr ? '[' : '{') + String(json) + (arr ? ']' : '}');
+    }
+  };
+
+  var _jsonValidate = function(s) {
+    var chars  = /^[\],:{}\s]*$/,
+        escape = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,
+        tokens = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
+        braces = /(?:^|:|,)(?:\s*\[)+/g;
+    return ( chars.test(s.replace(escape, '@').replace(tokens, ']').replace(braces, '') )) ? true : false;
+  };
+
+  var _jsonDecode = function(string) {
+    if(typeof string != 'string') return null;
+    string = Q.trim(string);
+    if ( window.JSON && window.JSON.parse ) {
+      return window.JSON.parse( string );
+    }
+    if(_jsonValidate(string)){
+     return (new Function( 'return ' + string ))();
+    }
+  };
+
+  Q.jsonValidate = Q.fn.jsonValidate = _jsonValidate;
+  Q.jsonEncode = Q.fn.jsonEncode = _jsonEncode;
+  Q.jsonDecode = Q.fn.jsonDecode = _jsonDecode;
+
+}());
+
+// Q.(object) => url param string
+Q.param = Q.fn.param = function(o){
+  var a = arguments, r = [];
+  var n = (typeof a[1] == 'string') ? (a[1] + '[%s]') : '%s';
+  for(var i in o){
+    if(typeof o[i] == 'object' && o[i] != null) r.push(Q.param(o[i], n.replace('%s', i)));
+    else r.push(n.replace('%s', i) + '=' + encodeURIComponent(o[i]));
+  }
+  return r.join('&');
+};
+
+// Q.ajax({  })
+(new function(){
+
+  var makeXHR = function(){
+    var xhr = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+
+    xhr.getResponse = function(){
+      var r = null;
+      if(typeof this.responseText == 'string'){
+        r = (Q.jsonValidate(this.responseText)) ? Q.jsonDecode(this.responseText) : this.responseText;
+      }
+      return r;
+    };
+
+    return xhr;
+  };
+
+  Q.ajax = Q.fn.ajax = function(o){
+    if(typeof o != 'object' || o == null) return this;
+    var q = {};
+    q.url = (typeof o.url == 'string') ? Q.trim(o.url) : location.href.replace(/#.*$/,'');
+    q.type = (typeof o.type == 'string' && Q.trim(o.type).length > 0) ? Q.trim(o.type) : 'POST';
+    q.async = (typeof o.async == 'boolean') ? o.async : true;
+    q.contentType = (typeof o.contentType == 'string' && Q.trim(o.contentType).length > 0) ? Q.trim(o.contentType) : 'application/x-www-form-urlencoded';
+    q.xRequestedWith = (typeof o.xRequestedWith == 'string') ? o.xRequestedWith : 'XMLHttpRequest';
+    q.data = (typeof o.data == 'object' && o.data != null) ? Q.param(o.data) : (typeof o.data == 'string' ? o.data : '');
+    q.headers = (typeof o.headers == 'object' && o.headers != null) ? o.headers : {};
+    q.timeout = (typeof o.timeout == 'number') ? o.timeout : 30;
+    q.error = (typeof o.error == 'function') ? o.error : function(){};
+    q.success = (typeof o.success == 'function') ? o.success : function(){};
+    q.complete = (typeof o.complete == 'function') ? o.complete : function(){};
+
+    if(q.type == 'GET' && Q.trim(q.data).length > 0){
+      q.url += (q.url.indexOf('?') >= 0) ? '&' : '?';
+      q.url += q.data;
+      q.data = null;
+    }
+
+    var xhr = makeXHR();
+    xhr.open(q.type, q.url, q.async);
+    xhr.setRequestHeader('Content-type', q.contentType);
+    xhr.setRequestHeader('X-Requested-With', q.xRequestedWith);
+    for(var i in q.headers){
+      xhr.setRequestHeader(String(i), String(q.headers[i]));
+    }
+    var done = false;
+    xhr.onreadystatechange = function(e){
+      if(xhr.readyState==4){
+        done = true;
+        if(xhr.status>=200 && xhr.status<=399){
+          q.success(xhr.getResponse(), xhr);
+        }
+        else q.error(xhr);
+        q.complete(xhr);
+      }
+    };
+    xhr.send(q.data);
+    setTimeout(function(){
+      if(!done){
+        q.error(xhr);
+        q.complete(xhr);
+      }
+    },q.timeout);
+    return this;
+  };
+}());
+
 // Q(selector).is(selector)
 Q.is = Q.fn.is = function(selector) {
   if(!this.length) return false;
@@ -800,3 +814,7 @@ Q.is = Q.fn.is = function(selector) {
 Q.not = Q.fn.not = function(selector) {
   return !this.is(selector);
 };
+
+// Q.tpl(template, data)
+// See: http://ejohn.org/blog/javascript-micro-templating/
+Q.tpl = Q.fn.tpl = function(){};
