@@ -50,6 +50,14 @@ class ApplicationInformationModule extends Module
         <span class="ui-caption">Standalone mode</span>
         <span class="ui-value browserStandaloneValue"></span>
        </div>
+       <div class="ui-item">
+        <span class="ui-caption">Connection mode</span>
+        <span class="ui-value browserConnectionModeValue"></span>
+       </div>
+       <div class="ui-item">
+        <span class="ui-caption">Connection type</span>
+        <span class="ui-value browserConnectionTypeValue"></span>
+       </div>
       </div>
       <div class="ui-description-blue-indented browserUserAgentValue"></div>
      </div>
@@ -80,6 +88,21 @@ class ApplicationInformationModule extends Module
     {
      Q('.browserUserAgentValue', SCREEN.NODE).text(navigator.userAgent);
      Q('.browserStandaloneValue', SCREEN.NODE).text((navigator.standalone) ? 'true' : 'false');
+
+     var connectionMode = 'UNKNOWN';
+     if( typeof navigator.onLine != 'undefined' ) {
+      connectionMode = (navigator.onLine) ? 'ONLINE' : 'OFFLINE';
+     }
+     Q('.browserConnectionModeValue', SCREEN.NODE).text(connectionMode);
+
+     var connectionType = 'UNKNOWN';
+     if( typeof navigator.connection != 'undefined' && typeof navigator.connection.type != 'undefined' ) {
+      if(navigator.connection.type == navigator.connection.ETHERNET) connectionType = 'ETHERNET';
+      else if(navigator.connection.type == navigator.connection.WIFI) connectionType = 'WIFI';
+      else if(navigator.connection.type == navigator.connection.CELL_2G) connectionType = '2G';
+      else if(navigator.connection.type == navigator.connection.CELL_3G) connectionType = '3G';
+     }
+     Q('.browserConnectionTypeValue', SCREEN.NODE).text(connectionType);
     };
 
    __construct();

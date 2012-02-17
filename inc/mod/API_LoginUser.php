@@ -47,6 +47,10 @@ class API_LoginUserModule extends Module
         <span class="ui-summary">User login dialog will shows</span>
         <span class="ui-arrow"></span>
        </a>
+       <a href="javascript://" class="ui-item-button loginAsGuestButton">
+        <span class="ui-caption">Login as Guest</span>
+        <span class="ui-arrow"></span>
+       </a>
        <a href="javascript://" class="ui-item-button logoutButton">
         <span class="ui-caption">Logout</span>
         <span class="ui-summary">User logout dialog will shows</span>
@@ -74,6 +78,7 @@ class API_LoginUserModule extends Module
     {
      Q('.' + __getName() + '_button').bind('click', SCREEN.show);
      initLoginButton();
+     initLoginAsGuestButton();
      initLogoutButton();
      refreshUserInfo();
      initSessionHandler();
@@ -107,6 +112,28 @@ class API_LoginUserModule extends Module
      Q('.currentUserIdValue', SCREEN.NODE).text( String(userId) );
      Q('.currentUserNameValue', SCREEN.NODE).text( String(userName) );
      Q('.currentUserStatusValue', SCREEN.NODE).text( String(isLoggedIn) );
+    };
+
+   var initLoginAsGuestButton = function()
+    {
+     //MNDirect.addEventHandler(MNDirect.EventName.onExecUICommandReceived, function(e){
+     //  if(e.cmdName == 'OnLoginScreenWait') {
+     //   MNDirect.execAppCommand('execLoginGuest', null);
+     //  }
+     //});
+
+     Q('.loginAsGuestButton', SCREEN.NODE).bind('click', function(){
+      if(!MNDirect.isUserLoggedIn())
+       {
+        // Login as Guest
+        MNDirect.execAppCommand('execLoginGuest', null);
+       }
+      else
+       {
+        alert('The user is logged in!');
+       }
+     });
+
     };
 
    var initLoginButton = function()

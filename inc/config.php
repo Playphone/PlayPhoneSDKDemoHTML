@@ -2,7 +2,7 @@
 
  define('TITLE', 'PlayPhone SDK Demo');
  define('DESCRIPTION', 'JavaScript SDK Demo application');
- define('VERSION', '1.4.7.1');
+ define('VERSION', '1.4.8');
 
  define('SDK_URL','http://webui.social.playphone.com/web_mnsapi/');
  define('SDK_HOST', SDK_URL.'MNDirectHost.js.php');
