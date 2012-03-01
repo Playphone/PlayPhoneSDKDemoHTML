@@ -8,6 +8,5 @@
  define('SDK_HOST', SDK_URL.'MNDirectHost.js.php');
  define('SDK_BUTTON', SDK_URL.'mn_direct_button_tr_ns.png');
  define('SDK_GAME_ID', 10900);
- //define('SDK_GAME_ID', 15200);
  define('SDK_GAME_SECRET', 'null');
  define('CACHE_MANIFEST', false);
